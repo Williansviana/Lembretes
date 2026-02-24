@@ -4,10 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="theme-color" content="#ff6f61">
-  <title> 📒 Meus Lembretes</title>
+  <title>🗓️ Lembretes</title>
   <style>
-    /* ... mesmo CSS do exemplo anterior ... */
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
     body {
       background: linear-gradient(135deg, #ff9ec6, #a1e4ff, #fff176);
       min-height: 100vh;
@@ -45,12 +49,17 @@
       border-radius: 10px;
       font-size: 16px;
     }
-    textarea { resize: vertical; min-height: 60px; }
+    textarea { 
+      resize: vertical; 
+      min-height: 60px; 
+    }
     .row {
       display: flex;
       gap: 12px;
     }
-    .row > .input-group { flex: 1; }
+    .row > .input-group { 
+      flex: 1; 
+    }
     button {
       background: #ff6f61;
       color: white;
@@ -63,7 +72,9 @@
       font-size: 16px;
       margin-top: 8px;
     }
-    button:hover { background: #ff4b3a; }
+    button:hover { 
+      background: #ff4b3a; 
+    }
     .reminders-list {
       list-style: none;
       margin-top: 24px;
@@ -103,8 +114,12 @@
       display: flex;
       gap: 10px;
     }
-    .btn-done { background: #4caf50; }
-    .btn-delete { background: #f44336; }
+    .btn-done { 
+      background: #4caf50; 
+    }
+    .btn-delete { 
+      background: #f44336; 
+    }
     .recurrence-badge {
       display: inline-block;
       background: #e3f2fd;
@@ -124,11 +139,11 @@
 </head>
 <body>
   <div class="container">
-    <h1> Meus Lembretes Diários ✅</h1>
+    <h1>Lembretes ✅</h1>
 
     <div class="input-group">
       <label for="title">Título *</label>
-      <input type="text" id="title" placeholder="Ex: medicos e atividades" />
+      <input type="text" id="title" placeholder="Ex: médicos e atividades" />
     </div>
 
     <div class="input-group">
@@ -163,7 +178,7 @@
     <ul class="reminders-list" id="reminders-list"></ul>
   </div>
 
-  <!-- Áudio oculto para notificação -->
+  <!-- Áudio corrigido (sem espaços) -->
   <audio id="notification-sound" preload="auto">
     <source src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" type="audio/mpeg">
   </audio>
@@ -179,14 +194,12 @@
     const audio = document.getElementById('notification-sound');
 
     let reminders = JSON.parse(localStorage.getItem('reminders')) || [];
-    let userHasInteracted = false; // Para destravar o som
+    let userHasInteracted = false;
 
-    // Marca que o usuário interagiu (permite tocar áudio)
     function markInteraction() {
       userHasInteracted = true;
     }
 
-    // Solicita permissão para notificações
     function requestNotificationPermission() {
       if (window.Notification && Notification.permission === 'default') {
         Notification.requestPermission();
@@ -212,9 +225,8 @@
       return map[rec] || '';
     }
 
-    // Toca notificação com som (se possível)
     function showNotificationWithSound(title, body) {
-      // Notificação visual
+      // Notificação visual (ícone sem espaços)
       if (window.Notification && Notification.permission === 'granted') {
         new Notification('📌 Lembrete!', {
           body: body,
@@ -222,7 +234,7 @@
         });
       }
 
-      // Tocar som (só se o usuário já interagiu)
+      // Som (só após interação)
       if (userHasInteracted && audio) {
         audio.currentTime = 0;
         audio.play().catch(e => console.log("Áudio bloqueado:", e));
@@ -231,8 +243,8 @@
 
     function checkDueReminders() {
       const now = new Date();
-      const nowDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-      const nowTime = now.toTimeString().substring(0, 5); // HH:MM
+      const nowDate = now.toISOString().split('T')[0];
+      const nowTime = now.toTimeString().substring(0, 5);
 
       reminders.forEach((reminder, index) => {
         if (reminder.done) return;
@@ -242,7 +254,7 @@
             reminder.title,
             reminder.description || 'Hora do lembrete! Não esqueça! 😊'
           );
-          reminders[index].done = true; // evita repetir
+          reminders[index].done = true;
           saveReminders();
           renderReminders();
         }
@@ -283,10 +295,15 @@
     }
 
     function addReminder() {
-      markInteraction(); // Libera o som
+      markInteraction();
       const title = titleInput.value.trim();
       if (!title) {
         alert('⚠️ Por favor, digite um título!');
+        return;
+      }
+
+      if (timeInput.value && !dateInput.value) {
+        alert('⚠️ Defina uma data se estiver usando hora.');
         return;
       }
 
@@ -299,19 +316,13 @@
         done: false
       };
 
-      if (newReminder.time && !newReminder.date) {
-        alert('⚠️ Defina uma data se estiver usando hora.');
-        return;
-      }
-
       reminders.push(newReminder);
       saveReminders();
       renderReminders();
 
-      // Limpar
+      // Limpar campos
       titleInput.value = '';
       descInput.value = '';
-      dateInput.value = '';
       timeInput.value = '';
       recurrenceSelect.value = '';
       titleInput.focus();
@@ -347,9 +358,11 @@
       }
     });
 
-    const today = new Date().toISOString().split('T')[0];
+    // Define data de hoje
+    const today = new Jan().toISOString().split('T')[0];
     dateInput.value = today;
 
+    // Inicia
     renderReminders();
     requestNotificationPermission();
   </script>
