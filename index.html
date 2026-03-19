@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="theme-color" content="#ff6f61">
-  <title>🗓️ Lembretes</title>
+  <title>🗓️ Meus Lembretes</title>
   <style>
     * {
       box-sizing: border-box;
@@ -48,18 +48,13 @@
       border: 2px solid #ddd;
       border-radius: 10px;
       font-size: 16px;
+      outline: none;
     }
-    textarea { 
-      resize: vertical; 
-      min-height: 60px; 
-    }
-    .row {
-      display: flex;
-      gap: 12px;
-    }
-    .row > .input-group { 
-      flex: 1; 
-    }
+    input:focus { border-color: #ff6f61; }
+    textarea { resize: vertical; min-height: 60px; }
+    .row { display: flex; gap: 12px; }
+    .row > .input-group { flex: 1; }
+    
     button {
       background: #ff6f61;
       color: white;
@@ -72,68 +67,57 @@
       font-size: 16px;
       margin-top: 8px;
     }
-    button:hover { 
-      background: #ff4b3a; 
-    }
-    .reminders-list {
-      list-style: none;
-      margin-top: 24px;
-    }
+    button:hover { background: #ff4b3a; }
+
+    .reminders-list { list-style: none; margin-top: 24px; }
     .reminder-item {
       background: #fdf6f0;
       padding: 16px;
       border-radius: 12px;
       margin-bottom: 14px;
       border-left: 5px solid #ff6f61;
+      transition: transform 0.2s;
     }
     .reminder-item.completed {
-      opacity: 0.8;
+      opacity: 0.6;
       border-left-color: #4caf50;
     }
     .reminder-item.completed .reminder-title {
       text-decoration: line-through;
-      color: #777;
     }
     .reminder-title {
       font-weight: bold;
       font-size: 18px;
       color: #d81b60;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .reminder-meta {
-      font-size: 13px;
-      color: #555;
-      margin: 6px 0;
-    }
-    .reminder-text {
-      color: #444;
-      margin-top: 6px;
-      font-size: 15px;
-    }
+    .reminder-meta { font-size: 13px; color: #555; margin: 6px 0; }
+    .reminder-text { color: #444; margin-top: 6px; font-size: 15px; }
     .reminder-actions {
       margin-top: 12px;
       display: flex;
       gap: 10px;
     }
-    .btn-done { 
-      background: #4caf50; 
-    }
-    .btn-delete { 
-      background: #f44336; 
-    }
+    .btn-done { background: #4caf50; font-size: 14px; }
+    .btn-delete { background: #f44336; font-size: 14px; }
+    
     .recurrence-badge {
-      display: inline-block;
       background: #e3f2fd;
       color: #1976d2;
       padding: 2px 8px;
       border-radius: 12px;
       font-size: 12px;
-      margin-left: 6px;
     }
     .notification-tip {
       text-align: center;
-      margin-top: 10px;
-      font-size: 14px;
+      margin-top: 15px;
+      font-size: 13px;
       color: #d81b60;
+      background: #fff0f0;
+      padding: 8px;
+      border-radius: 8px;
     }
   </style>
 </head>
@@ -142,13 +126,13 @@
     <h1>Lembretes ✅</h1>
 
     <div class="input-group">
-      <label for="title">Título *</label>
-      <input type="text" id="title" placeholder="Ex: médicos e atividades" />
+      <label for="title">O que precisa lembrar? *</label>
+      <input type="text" id="title" placeholder="Ex: Tomar remédio, Reunião..." />
     </div>
 
     <div class="input-group">
-      <label for="description">Descrição</label>
-      <textarea id="description" placeholder="Detalhes do lembrete..."></textarea>
+      <label for="description">Detalhes (opcional)</label>
+      <textarea id="description" placeholder="Adicione notas aqui..."></textarea>
     </div>
 
     <div class="row">
@@ -163,22 +147,21 @@
     </div>
 
     <div class="input-group">
-      <label for="recurrence">Lembrete recorrente?</label>
+      <label for="recurrence">Repetir?</label>
       <select id="recurrence">
-        <option value="">Nenhum</option>
-        <option value="daily">Diariamente</option>
-        <option value="weekly">Semanalmente</option>
-        <option value="monthly">Mensalmente</option>
+        <option value="">Não repetir</option>
+        <option value="daily">Todo dia</option>
+        <option value="weekly">Toda semana</option>
+        <option value="monthly">Todo mês</option>
       </select>
     </div>
 
     <button id="add-btn">✅ Adicionar Lembrete</button>
-    <div class="notification-tip">🔔🔔 Você receberá notificações com som no celular!</div>
+    <div class="notification-tip">🔔 Mantenha esta aba aberta para ouvir os alertas!</div>
 
     <ul class="reminders-list" id="reminders-list"></ul>
   </div>
 
-  <!-- Áudio corrigido (sem espaços) -->
   <audio id="notification-sound" preload="auto">
     <source src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" type="audio/mpeg">
   </audio>
@@ -196,97 +179,91 @@
     let reminders = JSON.parse(localStorage.getItem('reminders')) || [];
     let userHasInteracted = false;
 
-    function markInteraction() {
-      userHasInteracted = true;
+    // Inicializar data de hoje no input
+    dateInput.value = new Date().toISOString().split('T')[0];
+
+    function saveReminders() {
+      localStorage.setItem('reminders', JSON.stringify(reminders));
     }
 
     function requestNotificationPermission() {
       if (window.Notification && Notification.permission === 'default') {
         Notification.requestPermission();
       }
+      userHasInteracted = true;
     }
 
-    function saveReminders() {
-      localStorage.setItem('reminders', JSON.stringify(reminders));
-    }
-
-    function formatDate(dateStr) {
-      if (!dateStr) return '';
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('pt-BR');
-    }
-
-    function formatRecurrence(rec) {
-      const map = {
-        daily: '🔁 Diário',
-        weekly: '🔁 Semanal',
-        monthly: '🔁 Mensal'
-      };
-      return map[rec] || '';
-    }
-
-    function showNotificationWithSound(title, body) {
-      // Notificação visual (ícone sem espaços)
+    function showNotification(title, body) {
       if (window.Notification && Notification.permission === 'granted') {
-        new Notification('📌 Lembrete!', {
-          body: body,
-          icon: 'https://cdn-icons-png.flaticon.com/512/2526/2526240.png'
-        });
+        new Notification('📌 Lembrete!', { body, icon: 'https://cdn-icons-png.flaticon.com/512/2526/2526240.png' });
       }
-
-      // Som (só após interação)
-      if (userHasInteracted && audio) {
+      if (audio) {
         audio.currentTime = 0;
-        audio.play().catch(e => console.log("Áudio bloqueado:", e));
+        audio.play().catch(e => console.log("Áudio aguardando interação..."));
       }
     }
 
     function checkDueReminders() {
       const now = new Date();
-      const nowDate = now.toISOString().split('T')[0];
+      // Ajuste para fuso horário local e formato YYYY-MM-DD
+      const offset = now.getTimezoneOffset() * 60000;
+      const localISODate = new Date(now - offset).toISOString();
+      
+      const nowDate = localISODate.split('T')[0];
       const nowTime = now.toTimeString().substring(0, 5);
+
+      let changed = false;
 
       reminders.forEach((reminder, index) => {
         if (reminder.done) return;
 
-        if (reminder.date && reminder.time && reminder.date === nowDate && reminder.time === nowTime) {
-          showNotificationWithSound(
-            reminder.title,
-            reminder.description || 'Hora do lembrete! Não esqueça! 😊'
-          );
-          reminders[index].done = true;
-          saveReminders();
-          renderReminders();
+        if (reminder.date === nowDate && reminder.time === nowTime) {
+          showNotification(reminder.title, reminder.description || 'Hora da sua atividade!');
+
+          if (reminder.recurrence) {
+            // Calcula próxima data
+            let nextDate = new Date(reminder.date + 'T' + reminder.time);
+            if (reminder.recurrence === 'daily') nextDate.setDate(nextDate.getDate() + 1);
+            else if (reminder.recurrence === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
+            else if (reminder.recurrence === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
+            
+            reminders[index].date = nextDate.toISOString().split('T')[0];
+          } else {
+            reminders[index].done = true;
+          }
+          changed = true;
         }
       });
+
+      if (changed) {
+        saveReminders();
+        renderReminders();
+      }
     }
 
-    setInterval(checkDueReminders, 60000);
+    // Checa a cada 30 segundos para não perder o minuto exato
+    setInterval(checkDueReminders, 30000);
 
     function renderReminders() {
       listEl.innerHTML = '';
+      const mapRec = { daily: 'Diário', weekly: 'Semanal', monthly: 'Mensal' };
+
       reminders.forEach((reminder, index) => {
         const li = document.createElement('li');
         li.className = `reminder-item ${reminder.done ? 'completed' : ''}`;
 
-        let meta = '';
-        if (reminder.date || reminder.time) {
-          meta = `${reminder.date ? formatDate(reminder.date) : ''}${reminder.time ? ' às ' + reminder.time : ''}`;
-        }
-
-        const recurrenceText = formatRecurrence(reminder.recurrence);
+        const dateDisplay = reminder.date ? reminder.date.split('-').reverse().join('/') : '';
+        const recurrenceTag = reminder.recurrence ? `<span class="recurrence-badge">🔁 ${mapRec[reminder.recurrence]}</span>` : '';
 
         li.innerHTML = `
           <div class="reminder-title">
-            ${reminder.title}
-            ${recurrenceText ? `<span class="recurrence-badge">${recurrenceText}</span>` : ''}
+            <span>${reminder.title}</span>
+            ${recurrenceTag}
           </div>
-          ${meta ? `<div class="reminder-meta">📆 ${meta}</div>` : ''}
+          <div class="reminder-meta">📆 ${dateDisplay} ${reminder.time ? 'às ' + reminder.time : ''}</div>
           ${reminder.description ? `<div class="reminder-text">${reminder.description}</div>` : ''}
           <div class="reminder-actions">
-            <button class="btn-done" onclick="toggleDone(${index})">
-              ${reminder.done ? '❌ Desfazer' : '✅ Concluído'}
-            </button>
+            <button class="btn-done" onclick="toggleDone(${index})">${reminder.done ? '↩️ Refazer' : '✅ Concluir'}</button>
             <button class="btn-delete" onclick="deleteReminder(${index})">🗑️ Excluir</button>
           </div>
         `;
@@ -295,76 +272,45 @@
     }
 
     function addReminder() {
-      markInteraction();
+      requestNotificationPermission();
       const title = titleInput.value.trim();
-      if (!title) {
-        alert('⚠️ Por favor, digite um título!');
-        return;
-      }
+      if (!title) return alert('Dê um título ao lembrete!');
 
-      if (timeInput.value && !dateInput.value) {
-        alert('⚠️ Defina uma data se estiver usando hora.');
-        return;
-      }
-
-      const newReminder = {
+      reminders.push({
         title,
         description: descInput.value.trim(),
         date: dateInput.value || null,
         time: timeInput.value || null,
         recurrence: recurrenceSelect.value || null,
         done: false
-      };
+      });
 
-      reminders.push(newReminder);
       saveReminders();
       renderReminders();
-
-      // Limpar campos
       titleInput.value = '';
       descInput.value = '';
-      timeInput.value = '';
-      recurrenceSelect.value = '';
       titleInput.focus();
     }
 
-    window.toggleDone = function(index) {
-      markInteraction();
+    window.toggleDone = (index) => {
       reminders[index].done = !reminders[index].done;
       saveReminders();
       renderReminders();
     };
 
-    window.deleteReminder = function(index) {
-      markInteraction();
-      if (confirm('❓ Excluir este lembrete?')) {
+    window.deleteReminder = (index) => {
+      if (confirm('Excluir este lembrete?')) {
         reminders.splice(index, 1);
         saveReminders();
         renderReminders();
       }
     };
 
-    addBtn.addEventListener('click', () => {
-      markInteraction();
-      requestNotificationPermission();
-      addReminder();
-    });
+    addBtn.addEventListener('click', addReminder);
+    titleInput.addEventListener('keypress', (e) => e.key === 'Enter' && addReminder());
 
-    titleInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        markInteraction();
-        requestNotificationPermission();
-        addReminder();
-      }
-    });
-
-    // Define data de hoje
-    const today = new Jan().toISOString().split('T')[0];
-    dateInput.value = today;
-
-    // Inicia
+    // Início
     renderReminders();
-    requestNotificationPermission();
   </script>
 </body>
 </html>
